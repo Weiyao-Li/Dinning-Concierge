@@ -15,8 +15,6 @@ logger.setLevel(logging.DEBUG)
 
 # --- Helpers that build all of the responses ---
 
-
-
 def get_slots(intent_request):
     return intent_request['sessionState']['intent']['slots']
 
@@ -26,19 +24,6 @@ def get_session_attributes(intent_request):
     if 'sessionAttributes' in sessionState:
         return sessionState['sessionAttributes']
     return {}
-
-
-def elicitSlotExecute(event, slotToElicit, message):
-    return {
-        'sessionAttributes': event['sessionAttributes'],
-        'dialogAction': {
-            'type': 'ElicitSlot',
-            'intentName': event['currentIntent']['name'],
-            'slots': event['currentIntent']['slots'],
-            'slotToElicit': slotToElicit,
-            'message': message
-        }
-    }
 
 
 def get_slot(intent_request, slotName):
