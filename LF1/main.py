@@ -13,8 +13,9 @@ import re
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
-
 # --- Helpers that build all of the responses ---
+sqs = boto3.client('sqs')
+
 
 def get_slots(intent_request):
     return intent_request['sessionState']['intent']['slots']
@@ -25,6 +26,7 @@ def get_session_attributes(intent_request):
     if 'sessionAttributes' in sessionState:
         return sessionState['sessionAttributes']
     return {}
+
 
 def elicitSlotExecute(event, slotToElicit, message):
     return {
@@ -37,6 +39,7 @@ def elicitSlotExecute(event, slotToElicit, message):
             'message': message
         }
     }
+
 
 def get_slot(intent_request, slotName):
     slots = get_slots(intent_request)
@@ -67,12 +70,12 @@ def elicit_slot(session_attributes, intent_request, slots, slot_to_elicit, slot_
 
 
 def build_validation_result(is_valid, violated_slot, message_content):
-
     return {
         'isValid': is_valid,
         'violatedSlot': violated_slot,
         'message': {'contentType': 'PlainText', 'content': message_content}
     }
+
 
 def GetItemInDatabase(postal_code):
     """
@@ -93,11 +96,13 @@ def close(session_attributes, fulfillment_state, message):
     }
     return response
 
+
 def parse_int(n):
     try:
         return int(n)
     except ValueError:
         return float('nan')
+
 
 def delegateSlot(intent_request):
     return {
@@ -106,6 +111,7 @@ def delegateSlot(intent_request):
             "slots": intent_request["currentIntent"]["slots"]
         }
     }
+
 
 def validate_phone_number(phone_number):
     """
@@ -116,6 +122,7 @@ def validate_phone_number(phone_number):
         return build_validation_result(False, 'Phonenumber', 'Please enter a valid phone number with 10 digits.')
     return build_validation_result(True, None, None)
 
+
 def delegate(session_attributes, slots):
     return {
         'sessionAttributes': session_attributes,
@@ -124,6 +131,8 @@ def delegate(session_attributes, slots):
             'slots': slots
         }
     }
+
+
 def validationProcess(Location, Cuisine, Date, Time, Numberofpeople, Phonenumber):
     # Location Validation
     if Location and Location.lower() not in ['new york city', 'manhattan', 'bronx', 'queens', 'nyc', 'new york']:
@@ -154,7 +163,6 @@ def validationProcess(Location, Cuisine, Date, Time, Numberofpeople, Phonenumber
         return build_validation_result(False,
                                        'Phonenumber',
                                        'Please provide a phone number.')
-
 
     # Date Validation
     if not Date:
@@ -198,6 +206,7 @@ def validationProcess(Location, Cuisine, Date, Time, Numberofpeople, Phonenumber
             False, 'Date',
             "Sorry, I didn't understand that. Could you please enter a valid date in the format yyyy-mm-dd?"))
 
+
 def DiningSuggestionsIntent(intent_request):
     state = intent_request['sessionState']
     slots = intent_request["intent"]["slots"]
@@ -220,9 +229,11 @@ def DiningSuggestionsIntent(intent_request):
         resOfValidation = validationProcess(Location, Cuisine, Date, Time, Numberofpeople, Phonenumber)
         if not resOfValidation['isValid']:
             slots[resOfValidation['violatedSlot']] = None
-            return elicit_slot(intent_request['sessionAttributes'], intent_request['intent']['name'], slots, resOfValidation['violatedSlot'], resOfValidation['message'])
+            return elicit_slot(intent_request['sessionAttributes'], intent_request['intent']['name'], slots,
+                               resOfValidation['violatedSlot'], resOfValidation['message'])
 
-        output_session_attributes = intent_request['sessionAttributes'] if intent_request['sessionAttributes'] is not None else {}
+        output_session_attributes = intent_request['sessionAttributes'] if intent_request[
+                                                                               'sessionAttributes'] is not None else {}
 
         return delegate(output_session_attributes, get_slots(intent_request))
 
@@ -244,6 +255,24 @@ def dispatch(intent_request):
     if intent_name == 'DiningSuggestionsIntent':
         return DiningSuggestionsIntent(intent_request)
     print("Error!", intent_name)
+
+
+def send_message_to_SQS(slots):
+    msg = {
+        'Location': slots['Location'],
+        'Cuisine': slots['Cuisine'],
+        'Date': slots['Date'],
+        'Time': slots['Time'],
+        'Numberofpeople': slots['Numberofpeople'],
+        'Phonenumber': slots['Phonenumber']
+    }
+
+    response = sqs.send_message(
+        QueueUrl="https://sqs.us-east-1.amazonaws.com/778348423801/RestaurantQueue",
+        DelaySeconds=0,
+        MessageBody=json.dumps(msg),
+        MessageGroupId='LF1'
+    )
 
 
 # --- Main handler ---
