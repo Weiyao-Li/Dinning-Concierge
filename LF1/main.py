@@ -274,7 +274,6 @@ def send_message_to_SQS(slots):
         MessageGroupId='LF1'
     )
 
-
 # --- Main handler ---
 
 def lambda_handler(event, context):
