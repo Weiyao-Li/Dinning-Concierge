@@ -4,6 +4,7 @@ import json
 import string
 import requests
 import datetime
+from decimal import Decimal
 
 
 AWS_ACCESS_KEY_ID = ''
@@ -20,7 +21,7 @@ def getdict(restaurant):
     cuisine = restaurant.get('cuisine','')
     reviewCount = restaurant.get('review_count', 0)
     rating = int(restaurant.get('rating', 0))
-    zipCode = restaurant['location'].get('zip_code', None)
+    zipCode = restaurant.get('zip_code', None)
     insertedAtTimestamp = datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S.%f")
     
     datadict = {
@@ -32,7 +33,7 @@ def getdict(restaurant):
         'rating': rating,
         'zip_code': zipCode,
         'latitude' : latitude,
-        'longitude' : longitude
+        'longitude' : longitude,
         'inserted_at_timestamp': insertedAtTimestamp
     }
 
@@ -46,8 +47,8 @@ if __name__ == '__main__':
     client = boto3.resource('dynamodb', region_name='us-east-1', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
     table = client.Table(tablen)
     
-    with open('modified_data.json'.format(c), 'r') as f:
-        restos = json.load(f)
+    with open('modified_data.json', 'r') as f:
+        restos = json.load(f,parse_float=Decimal)
         print("Total records for this cuisine",len(restos))    
         for index, restos in enumerate(restos):
             print("adding ",index)
