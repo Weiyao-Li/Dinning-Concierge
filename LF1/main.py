@@ -1,5 +1,5 @@
 import math
-from datetime import datetime, timedelta
+import datetime
 
 import boto3
 import json
