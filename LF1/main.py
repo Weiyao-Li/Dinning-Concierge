@@ -113,23 +113,21 @@ def delegate(intent_request, slots):
 def validationProcess(Location, Cuisine, Date, Time, Numberofpeople, Email):
     # Location Validation
     if Location:
-        print("12312313131")
+        print('1234Locatioon')
         if Location.lower() not in ['new york city', 'manhattan', 'bronx', 'queens', 'nyc', 'new york']:
+            print('5667errorcomingup')
             return build_validation_result(False,
                                        'Location',
                                        'SpellbyWord',
                                        'Currently this is not an available location. Please enter location, like Manhattan')
-        else:
-            print("4546456456464")
-            return True
+
     # Cuisine Validation:
     if Cuisine:
         if Cuisine.lower() not in ['chinese', 'ethiopian', 'thai', 'american', 'french', 'italian', 'indian', 'japanese', 'spanish']:
             return build_validation_result(False, 'Cuisine', 'SpellbyWord', 'Sorry! The one you just entered is invalid! '
                                                          'Please choose from the following options: '
                                                          'chinese, japanese, thai, american, french, italian, indian')
-        else:
-            return True
+
     # Numberofpeople Validation
 
     if Numberofpeople:
@@ -138,8 +136,6 @@ def validationProcess(Location, Cuisine, Date, Time, Numberofpeople, Email):
                                            'Numberofpeople',
                                            'SpellbyWord',
                                             'Number of people should be between 1 and 10')
-        else:
-            return True
 
     # Date Validation
     if Date:
@@ -148,14 +144,13 @@ def validationProcess(Location, Cuisine, Date, Time, Numberofpeople, Email):
         date_to_check = datetime.date(year, month, day)
         if date_to_check < datetime.date.today():
             return build_validation_result(False, 'date', 'SpellByWord', 'Please enter a valid Dining date')
-        else:
-            return True
+
     if Time:
         print("Debug: time is:", Time)
         if not Time:
             return build_validation_result(False, 'Time', 'SpellByWord', '')
-        if Time:
-            return True
+    print('returningTrue!!!!!')
+    return True
 
 def DiningSuggestionsIntent(intent_request):
     state = intent_request['sessionState']
