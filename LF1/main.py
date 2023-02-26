@@ -124,7 +124,7 @@ def validationProcess(Location, Cuisine, Date, Time, Numberofpeople, Email):
             return True
     # Cuisine Validation:
     if Cuisine:
-        if Cuisine.lower() not in ['chinese', 'japanese', 'thai', 'american', 'french', 'italian', 'indian']:
+        if Cuisine.lower() not in ['chinese', 'ethiopian', 'thai', 'american', 'french', 'italian', 'indian', 'japanese', 'spanish']:
             return build_validation_result(False, 'Cuisine', 'SpellbyWord', 'Sorry! The one you just entered is invalid! '
                                                          'Please choose from the following options: '
                                                          'chinese, japanese, thai, american, french, italian, indian')
