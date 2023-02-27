@@ -12,6 +12,17 @@ REGION = 'us-east-1'
 HOST = 'search-restaurants-td6nk4e3zgzg3i3ix5ezgpr7am.us-east-1.es.amazonaws.com'
 INDEX = 'restaurants'
 
+USERTABLE= 'user_history'
+
+def insert_table(email,data):
+    res = [{'email':email, 'data':data}]
+    db = boto3.resource('dynamodb')
+    table = db.Table(USERTABLE)
+
+    for data in res:
+        response = table.put_item(Item=data)
+    print('@insert_data: response', response)
+
 def lambda_handler(event, context):
     sqs = boto3.client('sqs')
     s_queue_s = sqs.get_queue_url(QueueName='RestaurantQueue')
@@ -73,6 +84,9 @@ def lambda_handler(event, context):
 
         # Email sending to user
         send_email(email, message_to_user)
+        insert_table(email, message_to_user)
+
+
 
         # Delete queue info, fifo
         sqs.delete_message(
