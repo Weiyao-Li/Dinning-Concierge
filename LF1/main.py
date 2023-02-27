@@ -13,6 +13,7 @@ import re
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
+
 # --- Helpers that build all of the responses ---
 
 def get_slots(intent_request):
@@ -35,17 +36,17 @@ def get_slot(intent_request, slotName):
         return None
 
 
-def elicit_slot(session_attributes, intent_request, slots, slot_to_elicit, slot_elicitation_style, message):
+def elicit_slot(intent_request, session_attributes, slot, slots, message):
+    print("in elicitng slot")
     return {'sessionState': {'dialogAction': {'type': 'ElicitSlot',
-                                              'slotToElicit': slot_to_elicit,
-                                              'slotElicitationStyle': slot_elicitation_style
+                                              'slotToElicit': slot,
                                               },
                              'intent': {'name': intent_request['sessionState']['intent']['name'],
                                         'slots': slots,
                                         'state': 'InProgress'
                                         },
                              'sessionAttributes': session_attributes,
-                             'originatingRequestId': '70d49ca7-53de-4e1e-ac0a-70ecfc45b70a'
+                             #  'originatingRequestId': '70d49ca7-53de-4e1e-ac0a-70ecfc45b70a'
                              },
             'sessionId': intent_request['sessionId'],
             'messages': [message],
@@ -59,8 +60,9 @@ def build_validation_result(isvalid, violated_slot, slot_elicitation_style, mess
             'violatedSlot': violated_slot,
             'slotElicitationStyle': slot_elicitation_style,
             'message': {'contentType': 'PlainText',
-            'content': message_content}
+                        'content': message_content}
             }
+
 
 def GetItemInDatabase(postal_code):
     """
@@ -81,11 +83,10 @@ def close(intent_request, session_attributes, fulfillment_state, message):
             'intent': intent_request['sessionState']['intent'],
             'originatingRequestId': '2d3558dc-780b-422f-b9ec-7f6a1bd63f2e'
         },
-        'messages': [ message ],
+        'messages': [message],
         'sessionId': intent_request['sessionId'],
         'requestAttributes': intent_request['requestAttributes'] if 'requestAttributes' in intent_request else None
     }
-
 
 
 def parse_int(n):
@@ -93,6 +94,7 @@ def parse_int(n):
         return int(n)
     except ValueError:
         return float('nan')
+
 
 def delegate(intent_request, slots):
     return {
@@ -109,24 +111,33 @@ def delegate(intent_request, slots):
             "requestAttributes": intent_request['requestAttributes'] if 'requestAttributes' in intent_request else None
         }}
 
+def current_time():
+    now = datetime.datetime.now()
+    hour = str(now.hour).zfill(2)
+    minute = str(now.minute).zfill(2)
+    return f"{hour}:{minute}"
 
 def validationProcess(Location, Cuisine, Date, Time, Numberofpeople, Email):
     # Location Validation
+    print("in validation")
+    print(Location)
     if Location:
         print('1234Locatioon')
         if Location.lower() not in ['new york city', 'manhattan', 'bronx', 'queens', 'nyc', 'new york']:
             print('5667errorcomingup')
             return build_validation_result(False,
-                                       'Location',
-                                       'SpellbyWord',
-                                       'Currently this is not an available location. Please enter location, like Manhattan')
+                                           'Location',
+                                           'SpellbyWord',
+                                           'Currently this is not an available location. Please enter location, like Manhattan')
 
     # Cuisine Validation:
     if Cuisine:
-        if Cuisine.lower() not in ['chinese', 'ethiopian', 'thai', 'american', 'french', 'italian', 'indian', 'japanese', 'spanish']:
-            return build_validation_result(False, 'Cuisine', 'SpellbyWord', 'Sorry! The one you just entered is invalid! '
-                                                         'Please choose from the following options: '
-                                                         'chinese, japanese, thai, american, french, italian, indian')
+        if Cuisine.lower() not in ['chinese', 'ethiopian', 'thai', 'american', 'french', 'italian', 'indian',
+                                   'japanese', 'spanish']:
+            return build_validation_result(False, 'Cuisine', 'SpellbyWord',
+                                           'Sorry! The one you just entered is invalid! '
+                                           'Please choose from the following options: '
+                                           'chinese, japanese, thai, american, french, italian, indian')
 
     # Numberofpeople Validation
 
@@ -135,7 +146,7 @@ def validationProcess(Location, Cuisine, Date, Time, Numberofpeople, Email):
             return build_validation_result(False,
                                            'Numberofpeople',
                                            'SpellbyWord',
-                                            'Number of people should be between 1 and 10')
+                                           'Number of people should be between 1 and 10')
 
     # Date Validation
     if Date:
@@ -143,14 +154,24 @@ def validationProcess(Location, Cuisine, Date, Time, Numberofpeople, Email):
         year, month, day = map(int, Date.split('-'))
         date_to_check = datetime.date(year, month, day)
         if date_to_check < datetime.date.today():
-            return build_validation_result(False, 'date', 'SpellByWord', 'Please enter a valid Dining date')
+            return build_validation_result(False, 'Date', 'SpellByWord', 'Please enter a valid Dining date')
 
-    if Time:
-        print("Debug: time is:", Time)
-        if not Time:
-            return build_validation_result(False, 'Time', 'SpellByWord', '')
+        if Time:
+            print("Debug: time is:", Time)
+            year, month, day = map(int, Date.split('-'))
+            date_to_check = datetime.date(year, month, day)
+            now = current_time()
+            print("this is currwnt time")
+            print(now)
+            if (date_to_check <= datetime.date.today() and Time < now) or not Time:
+                print("error in time")
+                return build_validation_result(False, 'Time', 'SpellByWord', 'Please enter valid time')
     print('returningTrue!!!!!')
-    return True
+    return build_validation_result(True,
+                                   '',
+                                   'SpellbyWord',
+                                   '')
+
 
 def DiningSuggestionsIntent(intent_request):
     state = intent_request['sessionState']
@@ -173,10 +194,17 @@ def DiningSuggestionsIntent(intent_request):
         slots = get_slots(intent_request)
 
         resOfValidation = validationProcess(Location, Cuisine, Date, Time, Numberofpeople, Email)
-        if not resOfValidation:
+        print("result of validation")
+        print(resOfValidation)
+        if not resOfValidation['isValid']:
             slots[resOfValidation['violatedSlot']] = None
-            return elicit_slot(session_attributes, intent_request, slots,
-                               resOfValidation['violatedSlot'], resOfValidation['slotElicitationStyle'], resOfValidation['message'])
+            print("now eliciting")
+            print(resOfValidation)
+            result = elicit_slot(intent_request, session_attributes, resOfValidation['violatedSlot'], slots,
+                                 resOfValidation['message'])
+            print("the result of elicit slot")
+            print(result)
+            return result
 
     if not Location or not Date or not Time or not Numberofpeople or not Email or not Cuisine:
         return delegate(intent_request, get_slots(intent_request))
@@ -188,7 +216,6 @@ def DiningSuggestionsIntent(intent_request):
             Time,
             Numberofpeople,
             Email
-
 
         )
 
@@ -209,9 +236,11 @@ def dispatch(intent_request):
     # state = intent_request['sessionState']
 
     if intent_name == 'DiningSuggestionsIntent':
-        return DiningSuggestionsIntent(intent_request)
+        result = DiningSuggestionsIntent(intent_request)
+        print("the final dining suggestion intent")
+        print(result)
+        return result
     print("Error!", intent_name)
-
 
 
 def send_message_to_SQS(Location, Cuisine, Date, Time, Numberofpeople, Email):
@@ -249,12 +278,12 @@ def send_message_to_SQS(Location, Cuisine, Date, Time, Numberofpeople, Email):
         MessageBody=('Information about user inputs of Dining Chatbot.'),
     )
 
+
 # --- Main handler ---
 
 def lambda_handler(event, context):
     """
     Route the incoming request based on the intent.
-
     The JSON body of the request is provided in the event slot.
     """
 
@@ -265,5 +294,6 @@ def lambda_handler(event, context):
 
     logger.debug('event={}'.format(json.dumps(event)))
     response = dispatch(event)
-
+    print("The final response of the lambda handler")
+    print(response)
     return response
