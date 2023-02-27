@@ -2,7 +2,7 @@
 
 ## About ##
 
-HW 1 of the Cloud Computing & Big Data
+Assignment 1 of the Cloud Computing & Big Data
 class at Columbia University
 
 ## DEMO URL ##
