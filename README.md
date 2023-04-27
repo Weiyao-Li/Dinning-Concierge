@@ -7,7 +7,7 @@ Customer Service is a core service for a lot of businesses around the world and 
 ## DEMO URL ##
 http://diningchatbotccbd.com.s3-website-us-east-1.amazonaws.com/
 
-## Students ##
+## Developers ##
 Weiyao Li, Vedangi Kishor Wagh
 
 
